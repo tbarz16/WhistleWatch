@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basketball Officiating Call Charting Tool</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@400;500;600&display=swap');
+
+  :root {
+    --orange:   #E8570A;
+    --orange-lt:#FF7A38;
+    --black:    #0F0F0F;
+    --court:    #C8892A;
+    --cream:    #F5EDD8;
+    --chalk:    #E8E0CE;
+    --mid:      #6B5E4C;
+    --ink:      #1E1A14;
+    --red:      #C0392B;
+    --green:    #1E7A4A;
+    --blue:     #1A5FA8;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--ink);
+    font-family: 'Barlow', sans-serif;
+    color: var(--cream);
+    min-height: 100vh;
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 79px,
+        rgba(200,137,42,0.06) 79px,
+        rgba(200,137,42,0.06) 80px
+      );
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--black);
+    border-bottom: 3px solid var(--orange);
+    padding: 14px 24px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .header-left { display: flex; align-items: center; gap: 14px; }
+
+  .whistle-icon {
+    width: 42px; height: 42px;
+    background: var(--orange);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: var(--cream);
+  }
+
+  header h1 .subtitle {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    color: var(--court);
+    font-family: 'Share Tech Mono', monospace;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }
+
+  .game-meta {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .meta-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .meta-field label {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .meta-field input {
+    background: #1a1610;
+    border: 1px solid #3a3228;
+    border-radius: 3px;
+    color: var(--cream);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    width: 130px;
+    outline: none;
+  }
+  .meta-field input:focus { border-color: var(--orange); }
+  .meta-field input.wide { width: 180px; }
+
+  /* ── Layout ── */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 0;
+    min-height: calc(100vh - 81px);
+  }
+
+  /* ── Main Log Area ── */
+  .main {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ── Entry Form ── */
+  .entry-panel {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(200,137,42,0.2);
+    border-radius: 6px;
+    padding: 16px;
+  }
+
+  .panel-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--court);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(200,137,42,0.2);
+  }
+
+  .entry-grid {
+    display: grid;
+    grid-template-columns: 70px 90px 1fr 1fr 1fr 1fr 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-group label {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mid);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .field-group input,
+  .field-group select {
+    background: #1a1610;
+    border: 1px solid #3a3228;
+    border-radius: 3px;
+    color: var(--cream);
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.82rem;
+    padding: 6px 8px;
+    outline: none;
+    width: 100%;
+  }
+  .field-group input:focus,
+  .field-group select:focus { border-color: var(--orange); }
+  .field-group select option { background: #1a1610; }
+
+  .field-group.notes-field { grid-column: 1 / -2; }
+
+  .btn-log {
+    background: var(--orange);
+    color: white;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 7px 18px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    align-self: end;
+  }
+  .btn-log:hover { background: var(--orange-lt); }
+
+  /* ── Call Log Table ── */
+  .log-panel {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(200,137,42,0.15);
+    border-radius: 6px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .log-header {
+    display: grid;
+    grid-template-columns: 50px 62px 95px 100px 80px 70px 72px 72px 1fr 32px;
+    gap: 0;
+    background: #1a1610;
+    border-bottom: 2px solid var(--orange);
+    padding: 0;
+  }
+
+  .log-header div {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--court);
+    padding: 8px 8px;
+    border-right: 1px solid rgba(200,137,42,0.1);
+  }
+  .log-header div:last-child { border-right: none; }
+
+  .log-body {
+    max-height: calc(100vh - 400px);
+    overflow-y: auto;
+  }
+
+  .log-body::-webkit-scrollbar { width: 5px; }
+  .log-body::-webkit-scrollbar-track { background: transparent; }
+  .log-body::-webkit-scrollbar-thumb { background: #3a3228; border-radius: 3px; }
+
+  .log-row {
+    display: grid;
+    grid-template-columns: 50px 62px 95px 100px 80px 70px 72px 72px 1fr 32px;
+    gap: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.1s;
+  }
+  .log-row:hover { background: rgba(232,87,10,0.05); }
+  .log-row:nth-child(even) { background: rgba(255,255,255,0.015); }
+  .log-row:nth-child(even):hover { background: rgba(232,87,10,0.06); }
+
+  .log-row div {
+    font-size: 0.75rem;
+    padding: 7px 8px;
+    border-right: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    color: var(--chalk);
+  }
+  .log-row div:last-child { border-right: none; }
+
+  .log-row .cell-qtr {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--court);
+    font-weight: bold;
+  }
+
+  .log-row .cell-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+  }
+
+  .log-row .cell-notes {
+    color: var(--mid);
+    font-size: 0.68rem;
+    font-style: italic;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.62rem;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  .badge-foul   { background: rgba(192,57,43,0.25); color: #e8786d; border: 1px solid rgba(192,57,43,0.4); }
+  .badge-vio    { background: rgba(26,95,168,0.25); color: #74aaef; border: 1px solid rgba(26,95,168,0.4); }
+  .badge-stop   { background: rgba(200,137,42,0.25); color: #e8b86d; border: 1px solid rgba(200,137,42,0.4); }
+  .badge-tech   { background: rgba(128,0,200,0.25); color: #c085ef; border: 1px solid rgba(128,0,200,0.4); }
+  .badge-other  { background: rgba(100,100,100,0.25); color: #aaa; border: 1px solid rgba(100,100,100,0.4); }
+
+  .verdict-cc  { color: #5ec488; font-size: 0.68rem; font-family: 'Share Tech Mono', monospace; }
+  .verdict-ncc { color: #74aaef; font-size: 0.68rem; font-family: 'Share Tech Mono', monospace; }
+  .verdict-ci  { color: #e8786d; font-size: 0.68rem; font-family: 'Share Tech Mono', monospace; }
+  .verdict-nci { color: #c085ef; font-size: 0.68rem; font-family: 'Share Tech Mono', monospace; }
+
+  .pos-badge {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: rgba(200,137,42,0.12);
+    color: var(--court);
+    border: 1px solid rgba(200,137,42,0.25);
+  }
+
+  .cov-badge {
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: rgba(26,95,168,0.12);
+    color: #74aaef;
+    border: 1px solid rgba(26,95,168,0.25);
+  }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: #3a3228;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px;
+    border-radius: 2px;
+    transition: color 0.15s;
+    width: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-del:hover { color: var(--red); }
+
+  .empty-state {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--mid);
+    font-size: 0.8rem;
+    font-style: italic;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: #0a0906;
+    border-left: 1px solid rgba(200,137,42,0.2);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+  }
+
+  .sidebar-section-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--court);
+    border-bottom: 1px solid rgba(200,137,42,0.2);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+  }
+
+  /* Quarter breakdown */
+  .qtr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.72rem;
+  }
+
+  .qtr-table th {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mid);
+    text-align: center;
+    padding: 4px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .qtr-table td {
+    text-align: center;
+    padding: 5px 4px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--chalk);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.7rem;
+  }
+
+  .qtr-table tr td:first-child {
+    text-align: left;
+    color: var(--mid);
+    font-size: 0.62rem;
+  }
+
+  .qtr-hot { color: var(--orange-lt); font-weight: bold; }
+
+  /* Team foul tracker */
+  .team-fouls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .team-foul-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(200,137,42,0.15);
+    border-radius: 4px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .team-foul-box .team-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .team-foul-box .foul-count {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--cream);
+  }
+
+  .team-foul-box .foul-count.danger { color: var(--red); }
+  .team-foul-box .foul-count.warn   { color: var(--court); }
+
+  /* Simple stat rows */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    gap: 6px;
+  }
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--chalk);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.04em;
+  }
+  .stat-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--court);
+    white-space: nowrap;
+  }
+
+  /* Verdict tracker boxes */
+  .verdict-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .verdict-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 4px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .verdict-box .vb-code {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .verdict-box .vb-num {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.6rem;
+    line-height: 1;
+    font-weight: bold;
+  }
+
+  .verdict-box .vb-label {
+    font-size: 0.55rem;
+    color: var(--mid);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .vb-cc  { border-color: rgba(30,122,74,0.35);   }
+  .vb-cc  .vb-code, .vb-cc  .vb-num { color: #5ec488; }
+  .vb-ncc { border-color: rgba(26,95,168,0.35);   }
+  .vb-ncc .vb-code, .vb-ncc .vb-num { color: #74aaef; }
+  .vb-ci  { border-color: rgba(192,57,43,0.35);   }
+  .vb-ci  .vb-code, .vb-ci  .vb-num { color: #e8786d; }
+  .vb-nci { border-color: rgba(128,0,200,0.35);   }
+  .vb-nci .vb-code, .vb-nci .vb-num { color: #c085ef; }
+
+  /* Ref info rows */
+  .ref-list { display: flex; flex-direction: column; gap: 5px; }
+  .ref-entry {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.72rem;
+  }
+  .ref-name { font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem; color: var(--chalk); }
+  .ref-callcount { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; color: var(--mid); }
+
+  /* Export bar */
+  .export-bar {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .btn-export {
+    background: transparent;
+    border: 1px solid rgba(200,137,42,0.35);
+    color: var(--court);
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .btn-export:hover { background: rgba(200,137,42,0.1); border-color: var(--court); color: var(--cream); }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid rgba(192,57,43,0.3);
+    color: rgba(192,57,43,0.6);
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .btn-clear:hover { background: rgba(192,57,43,0.1); border-color: var(--red); color: var(--red); }
+
+  @media print {
+    body { background: white; color: black; }
+    .sidebar { display: none; }
+    .app { grid-template-columns: 1fr; }
+    .entry-panel { display: none; }
+    .btn-export, .btn-clear, .btn-del, .btn-log { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="whistle-icon">🏀</div>
+    <h1>
+      WhistleWatch
+      <span class="subtitle">A Basketball Officiating Call Charting Tool - TBarz16</span>
+    </h1>
+  </div>
+  <div class="game-meta">
+    <div class="meta-field">
+      <label>Date</label>
+      <input type="date" id="game-date">
+    </div>
+    <div class="meta-field">
+      <label>Home Team</label>
+      <input type="text" id="home-team" placeholder="Home" class="wide">
+    </div>
+    <div class="meta-field">
+      <label>Away Team</label>
+      <input type="text" id="away-team" placeholder="Away" class="wide">
+    </div>
+    <div class="meta-field">
+      <label>Crew Chief</label>
+      <input type="text" id="ref1" placeholder="Ref #1">
+    </div>
+    <div class="meta-field">
+      <label>Ref 2</label>
+      <input type="text" id="ref2" placeholder="Ref #2">
+    </div>
+    <div class="meta-field">
+      <label>Ref 3</label>
+      <input type="text" id="ref3" placeholder="Ref #3">
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <div class="main">
+
+    <!-- Entry Form -->
+    <div class="entry-panel">
+      <div class="panel-label">Log a Call</div>
+      <div class="entry-grid">
+        <div class="field-group">
+          <label>Qtr</label>
+          <select id="e-qtr">
+            <option>Q1</option><option>Q2</option>
+            <option>Q3</option><option>Q4</option>
+            <option>OT1</option><option>OT2</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Game Clock</label>
+          <input type="text" id="e-time" placeholder="e.g. 4:22">
+        </div>
+        <div class="field-group">
+          <label>Call Type</label>
+          <select id="e-type">
+            <optgroup label="Personal Fouls">
+              <option value="SF|foul">Shooting Foul</option>
+              <option value="PC|foul">Player Control</option>
+              <option value="HAND|foul">Ball Handler</option>
+              <option value="SCREEN|foul">Illegal Screen</option>
+              <option value="FOM|foul">Freedom of Movement</option>
+              <option value="POST|foul">Post Play (Defense)</option>
+              <option value="REB|foul">Rebounding</option>
+            </optgroup>
+            <optgroup label="Technical / Flagrant">
+              <option value="TECH|tech">Technical Foul</option>
+              <option value="FLAG1|tech">Flagrant 1</option>
+              <option value="FLAG2|tech">Flagrant 2</option>
+            </optgroup>
+            <optgroup label="Violations">
+              <option value="TRAVEL|vio">Traveling</option>
+              <option value="DBL|vio">Double Dribble</option>
+              <option value="CARRY|vio">Carry / Palming</option>
+              <option value="OOB|vio">Out of Bounds</option>
+              <option value="BACK|vio">Backcourt</option>
+              <option value="LANE|vio">Lane Violation</option>
+              <option value="GOAL|vio">Goaltending / Int.</option>
+              <option value="3SEC|vio">3-Second</option>
+              <option value="5SEC|vio">5-Second</option>
+              <option value="10SEC|vio">10-Second</option>
+              <option value="SHOT|vio">Shot Clock Violation</option>
+              <option value="KICKING|vio">Kicking Violation</option>
+            </optgroup>
+            <optgroup label="Stoppages / Other">
+              <option value="HELD|stop">Held Ball</option>
+              <option value="TO|stop">Team Timeout</option>
+              <option value="MEDIA|stop">Media Timeout</option>
+              <option value="REVIEW|stop">Replay Review</option>
+              <option value="CLOCK|stop">Clock / Timing</option>
+              <option value="OTHER|other">Other</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>On Team</label>
+          <select id="e-team">
+            <option value="">— N/A —</option>
+            <option id="opt-home" value="home">Home</option>
+            <option id="opt-away" value="away">Away</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Called By</label>
+          <select id="e-ref">
+            <option value="">— Unknown —</option>
+            <option id="opt-r1">Chief</option>
+            <option id="opt-r2">Ref 2</option>
+            <option id="opt-r3">Ref 3</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Position</label>
+          <select id="e-pos">
+            <option value="">— N/A —</option>
+            <option value="Lead">Lead</option>
+            <option value="Center">Center</option>
+            <option value="Trail">Trail</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Coverage</label>
+          <select id="e-cov">
+            <option value="">— N/A —</option>
+            <option value="Primary">Primary</option>
+            <option value="Secondary">Secondary</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Verdict</label>
+          <select id="e-verdict">
+            <option value="">— N/A —</option>
+            <option value="CC">CC — Call Correct</option>
+            <option value="NCC">NCC — No Call Correct</option>
+            <option value="CI">CI — Call Incorrect</option>
+            <option value="NCI">NCI — No Call Incorrect</option>
+          </select>
+        </div>
+        <div class="field-group notes-field">
+          <label>Notes</label>
+          <input type="text" id="e-notes" placeholder="Context, player, situation...">
+        </div>
+        <button class="btn-log" onclick="logCall()">+ Log</button>
+      </div>
+    </div>
+
+    <!-- Call Log -->
+    <div class="log-panel">
+      <div class="log-header">
+        <div>Qtr</div>
+        <div>Clock</div>
+        <div>Call</div>
+        <div>Type</div>
+        <div>Team</div>
+        <div>Ref</div>
+        <div>Position</div>
+        <div>Coverage</div>
+        <div>Notes / Verdict</div>
+        <div></div>
+      </div>
+      <div class="log-body" id="log-body">
+        <div class="empty-state">No calls logged yet — use the form above to begin film breakdown.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Team Fouls -->
+    <div>
+      <div class="sidebar-section-title">Team Fouls (Total)</div>
+      <div class="team-fouls">
+        <div class="team-foul-box">
+          <div class="team-name" id="sb-home">HOME</div>
+          <div class="foul-count" id="sb-home-fouls">0</div>
+        </div>
+        <div class="team-foul-box">
+          <div class="team-name" id="sb-away">AWAY</div>
+          <div class="foul-count" id="sb-away-fouls">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quarter Breakdown -->
+    <div>
+      <div class="sidebar-section-title">Calls by Quarter</div>
+      <table class="qtr-table" id="qtr-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th>
+          </tr>
+        </thead>
+        <tbody id="qtr-body">
+          <tr><td colspan="5" style="color:var(--mid);font-style:italic;font-size:0.65rem;padding:8px;">No data yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Calls per Ref -->
+    <div>
+      <div class="sidebar-section-title">Calls per Ref</div>
+      <div class="ref-list" id="ref-list">
+        <div style="color:var(--mid);font-size:0.7rem;font-style:italic;">No assignments logged.</div>
+      </div>
+    </div>
+
+    <!-- Calls by Referee Position -->
+    <div>
+      <div class="sidebar-section-title">Calls by Position</div>
+      <div id="pos-list">
+        <div style="color:var(--mid);font-size:0.7rem;font-style:italic;">No position data logged.</div>
+      </div>
+    </div>
+
+    <!-- Calls by Coverage Area -->
+    <div>
+      <div class="sidebar-section-title">Calls by Coverage Area</div>
+      <div id="cov-list">
+        <div style="color:var(--mid);font-size:0.7rem;font-style:italic;">No coverage data logged.</div>
+      </div>
+    </div>
+
+    <!-- Verdict Tracker -->
+    <div>
+      <div class="sidebar-section-title">Verdict Tracker</div>
+      <div class="verdict-grid">
+        <div class="verdict-box vb-cc">
+          <div class="vb-code">CC</div>
+          <div class="vb-num" id="vb-cc">0</div>
+          <div class="vb-label">Call Correct</div>
+        </div>
+        <div class="verdict-box vb-ncc">
+          <div class="vb-code">NCC</div>
+          <div class="vb-num" id="vb-ncc">0</div>
+          <div class="vb-label">No Call Correct</div>
+        </div>
+        <div class="verdict-box vb-ci">
+          <div class="vb-code">CI</div>
+          <div class="vb-num" id="vb-ci">0</div>
+          <div class="vb-label">Call Incorrect</div>
+        </div>
+        <div class="verdict-box vb-nci">
+          <div class="vb-code">NCI</div>
+          <div class="vb-num" id="vb-nci">0</div>
+          <div class="vb-label">No Call Incorrect</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="export-bar">
+      <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn-export" onclick="window.print()">🖨 Print Sheet</button>
+      <button class="btn-clear" onclick="clearAll()">✕ Clear Session</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let calls = [];
+let nextId = 1;
+
+const BADGE_MAP = {
+  foul:  ['badge-foul',  'FOUL'],
+  vio:   ['badge-vio',   'VIOLATION'],
+  stop:  ['badge-stop',  'STOPPAGE'],
+  tech:  ['badge-tech',  'TECHNICAL'],
+  other: ['badge-other', 'OTHER'],
+};
+
+const VERDICT_MAP = {
+  CC:  'verdict-cc',
+  NCC: 'verdict-ncc',
+  CI:  'verdict-ci',
+  NCI: 'verdict-nci',
+};
+
+function getTeamName(side) {
+  const h = document.getElementById('home-team').value.trim() || 'Home';
+  const a = document.getElementById('away-team').value.trim() || 'Away';
+  return side === 'home' ? h : side === 'away' ? a : '—';
+}
+
+function getRefName(refId) {
+  if (!refId) return '—';
+  const map = {
+    Chief:   document.getElementById('ref1').value.trim() || 'Chief',
+    'Ref 2': document.getElementById('ref2').value.trim() || 'Ref 2',
+    'Ref 3': document.getElementById('ref3').value.trim() || 'Ref 3',
+  };
+  return map[refId] || refId;
+}
+
+function logCall() {
+  const qtr     = document.getElementById('e-qtr').value;
+  const time    = document.getElementById('e-time').value.trim() || '—';
+  const typeRaw = document.getElementById('e-type').value;
+  const team    = document.getElementById('e-team').value;
+  const ref     = document.getElementById('e-ref').value;
+  const pos     = document.getElementById('e-pos').value;
+  const cov     = document.getElementById('e-cov').value;
+  const verdict = document.getElementById('e-verdict').value;
+  const notes   = document.getElementById('e-notes').value.trim();
+
+  const [code, cat] = typeRaw.split('|');
+  const call = { id: nextId++, qtr, time, code, cat, team, ref, pos, cov, verdict, notes };
+  calls.push(call);
+  document.getElementById('e-time').value = '';
+  document.getElementById('e-notes').value = '';
+  render();
+}
+
+function deleteCall(id) {
+  calls = calls.filter(c => c.id !== id);
+  render();
+}
+
+function render() {
+  renderLog();
+  renderTeamFouls();
+  renderQtrTable();
+  renderRefList();
+  renderPosList();
+  renderCovList();
+  renderVerdicts();
+  syncRefOptions();
+}
+
+function renderLog() {
+  const body = document.getElementById('log-body');
+  if (calls.length === 0) {
+    body.innerHTML = '<div class="empty-state">No calls logged yet — use the form above to begin film breakdown.</div>';
+    return;
+  }
+  body.innerHTML = calls.map(c => {
+    const [badgeClass, badgeLabel] = BADGE_MAP[c.cat] || BADGE_MAP.other;
+    const teamName = getTeamName(c.team);
+    const refName  = getRefName(c.ref);
+    const verdictClass = VERDICT_MAP[c.verdict] || '';
+    const verdictHtml = c.verdict ? `<span class="${verdictClass}" style="margin-left:6px;">${c.verdict}</span>` : '';
+    const posHtml = c.pos ? `<span class="pos-badge">${c.pos}</span>` : '<span style="color:var(--mid)">—</span>';
+    const covHtml = c.cov ? `<span class="cov-badge">${c.cov}</span>` : '<span style="color:var(--mid)">—</span>';
+    return `
+      <div class="log-row">
+        <div class="cell-qtr">${c.qtr}</div>
+        <div class="cell-time">${c.time}</div>
+        <div><span class="badge ${badgeClass}">${c.code}</span></div>
+        <div><span style="font-size:0.65rem;color:var(--mid);">${badgeLabel}</span></div>
+        <div style="font-size:0.7rem;">${teamName}</div>
+        <div style="font-size:0.7rem;">${refName}</div>
+        <div>${posHtml}</div>
+        <div>${covHtml}</div>
+        <div class="cell-notes">${c.notes || ''}${verdictHtml}</div>
+        <div><button class="btn-del" onclick="deleteCall(${c.id})" title="Remove">✕</button></div>
+      </div>`;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+function renderTeamFouls() {
+  const h = document.getElementById('home-team').value.trim() || 'HOME';
+  const a = document.getElementById('away-team').value.trim() || 'AWAY';
+  document.getElementById('sb-home').textContent = h;
+  document.getElementById('sb-away').textContent = a;
+  const foulCats = ['foul','tech'];
+  const hf = calls.filter(c => c.team === 'home' && foulCats.includes(c.cat)).length;
+  const af = calls.filter(c => c.team === 'away' && foulCats.includes(c.cat)).length;
+  const hEl = document.getElementById('sb-home-fouls');
+  const aEl = document.getElementById('sb-away-fouls');
+  hEl.textContent = hf;
+  hEl.className = 'foul-count' + (hf >= 5 ? ' danger' : hf >= 3 ? ' warn' : '');
+  aEl.textContent = af;
+  aEl.className = 'foul-count' + (af >= 5 ? ' danger' : af >= 3 ? ' warn' : '');
+}
+
+function renderQtrTable() {
+  const qtrs = ['Q1','Q2','Q3','Q4'];
+  const cats = { foul:'Fouls', vio:'Violations', tech:'Technical', stop:'Stoppages' };
+  const tbody = document.getElementById('qtr-body');
+  const data = {};
+  calls.forEach(c => {
+    const cat = cats[c.cat] || 'Other';
+    if (!data[cat]) data[cat] = {Q1:0,Q2:0,Q3:0,Q4:0};
+    if (data[cat][c.qtr] !== undefined) data[cat][c.qtr]++;
+  });
+  const rows = Object.entries(data);
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--mid);font-style:italic;font-size:0.65rem;padding:8px;">No data yet.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(([cat, q]) => {
+    const max = Math.max(...Object.values(q));
+    return `<tr>
+      <td>${cat}</td>
+      ${qtrs.map(qtr => `<td class="${q[qtr] === max && max > 0 ? 'qtr-hot' : ''}">${q[qtr] || '—'}</td>`).join('')}
+    </tr>`;
+  }).join('');
+}
+
+function renderRefList() {
+  const counts = {};
+  calls.forEach(c => {
+    if (c.ref) {
+      const name = getRefName(c.ref);
+      counts[name] = (counts[name] || 0) + 1;
+    }
+  });
+  const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const list = document.getElementById('ref-list');
+  if (entries.length === 0) {
+    list.innerHTML = '<div style="color:var(--mid);font-size:0.7rem;font-style:italic;">No assignments logged.</div>';
+    return;
+  }
+  list.innerHTML = entries.map(([name, n]) => `
+    <div class="stat-row">
+      <span class="stat-label">${name}</span>
+      <span class="stat-val">${n} call${n!==1?'s':''}</span>
+    </div>`).join('');
+}
+
+function renderPosList() {
+  const counts = { Lead: 0, Center: 0, Trail: 0 };
+  let any = false;
+  calls.forEach(c => { if (c.pos && counts[c.pos] !== undefined) { counts[c.pos]++; any = true; } });
+  const el = document.getElementById('pos-list');
+  if (!any) {
+    el.innerHTML = '<div style="color:var(--mid);font-size:0.7rem;font-style:italic;">No position data logged.</div>';
+    return;
+  }
+  el.innerHTML = Object.entries(counts).map(([pos, n]) => `
+    <div class="stat-row">
+      <span class="stat-label">${pos}</span>
+      <span class="stat-val">${n}</span>
+    </div>`).join('');
+}
+
+function renderCovList() {
+  const counts = { Primary: 0, Secondary: 0 };
+  let any = false;
+  calls.forEach(c => { if (c.cov && counts[c.cov] !== undefined) { counts[c.cov]++; any = true; } });
+  const el = document.getElementById('cov-list');
+  if (!any) {
+    el.innerHTML = '<div style="color:var(--mid);font-size:0.7rem;font-style:italic;">No coverage data logged.</div>';
+    return;
+  }
+  el.innerHTML = Object.entries(counts).map(([cov, n]) => `
+    <div class="stat-row">
+      <span class="stat-label">${cov}</span>
+      <span class="stat-val">${n}</span>
+    </div>`).join('');
+}
+
+function renderVerdicts() {
+  const counts = { CC: 0, NCC: 0, CI: 0, NCI: 0 };
+  calls.forEach(c => { if (c.verdict && counts[c.verdict] !== undefined) counts[c.verdict]++; });
+  document.getElementById('vb-cc').textContent  = counts.CC;
+  document.getElementById('vb-ncc').textContent = counts.NCC;
+  document.getElementById('vb-ci').textContent  = counts.CI;
+  document.getElementById('vb-nci').textContent = counts.NCI;
+}
+
+function syncRefOptions() {
+  const r1 = document.getElementById('ref1').value.trim() || 'Chief';
+  const r2 = document.getElementById('ref2').value.trim() || 'Ref 2';
+  const r3 = document.getElementById('ref3').value.trim() || 'Ref 3';
+  document.getElementById('opt-r1').textContent = r1;
+  document.getElementById('opt-r2').textContent = r2;
+  document.getElementById('opt-r3').textContent = r3;
+  const h = document.getElementById('home-team').value.trim() || 'Home';
+  const a = document.getElementById('away-team').value.trim() || 'Away';
+  document.getElementById('opt-home').textContent = h;
+  document.getElementById('opt-away').textContent = a;
+}
+
+function exportCSV() {
+  const h = document.getElementById('home-team').value.trim() || 'Home';
+  const a = document.getElementById('away-team').value.trim() || 'Away';
+  const date = document.getElementById('game-date').value || 'Unknown Date';
+  const header = ['#','Quarter','Clock','Code','Category','Team','Ref','Position','Coverage','Verdict','Notes'];
+  const rows = calls.map((c,i) => [
+    i+1, c.qtr, c.time, c.code, c.cat.toUpperCase(),
+    getTeamName(c.team), getRefName(c.ref),
+    c.pos || '', c.cov || '', c.verdict || '',
+    `"${c.notes.replace(/"/g,'""')}"`
+  ]);
+  const csv = [
+    `# Basketball Officiating Call Charting Tool — ${h} vs ${a} — ${date}`,
+    header.join(','),
+    ...rows.map(r => r.join(','))
+  ].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a2 = document.createElement('a');
+  a2.href = url;
+  a2.download = `call-chart-${date}.csv`;
+  a2.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearAll() {
+  if (confirm('Clear all logged calls? This cannot be undone.')) {
+    calls = []; nextId = 1;
+    render();
+  }
+}
+
+['home-team','away-team','ref1','ref2','ref3'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    syncRefOptions();
+    renderTeamFouls();
+    renderRefList();
+  });
+});
+
+document.getElementById('game-date').valueAsDate = new Date();
+</script>
+</body>
+</html>
